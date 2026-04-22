@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@v-ems/element/globals.css";
+@import "@v-ems/element/theme.css";
 
 @source "./**/*.{ts,tsx}";
 @custom-variant dark (&:is(.dark *));
