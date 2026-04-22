@@ -66,7 +66,7 @@ export function LeftHeaderItems() {
             className={`text-foreground/50 transition-transform duration-300 ${open && "rotate-180"}`}
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" className="min-w-64">
+        <DropdownMenuContent align="center" className="min-w-64" sideOffset={18}>
           {sims.map((sim) => (
             <DropdownMenuItem
               key={sim.id}

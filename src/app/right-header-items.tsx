@@ -95,7 +95,7 @@ function AccountMenu() {
       <DropdownMenuTrigger asChild>
         <IconButton icon={UserIcon} label="Account" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-64">
+      <DropdownMenuContent align="end" sideOffset={20} alignOffset={-7} className="min-w-64">
         <DropdownMenuItem>
           <HugeiconsIcon icon={UserIcon} size={16} />
           <span className="flex-1">Profile</span>

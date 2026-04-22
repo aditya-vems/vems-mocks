@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  LabsIcon,
+  SlidersVerticalIcon,
   PlayCircleIcon,
   PresentationBarChart01Icon,
 } from "@hugeicons/core-free-icons";
@@ -9,11 +9,11 @@ import {
 type TabDef = {
   to: string;
   label: string;
-  icon: typeof LabsIcon;
+  icon: typeof SlidersVerticalIcon;
 };
 
 const tabs: TabDef[] = [
-  { to: "/simulate", label: "Simulate", icon: LabsIcon },
+  { to: "/simulate", label: "Simulate", icon: SlidersVerticalIcon },
   { to: "/run", label: "Run", icon: PlayCircleIcon },
   { to: "/analyze", label: "Analyze", icon: PresentationBarChart01Icon },
 ];
