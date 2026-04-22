@@ -16,6 +16,11 @@ import {
   PlayCircleIcon,
   Database02Icon,
   ArrowLeft01Icon,
+  CubeIcon,
+  UserMultiple02Icon,
+  Globe02Icon,
+  DashboardSquare01Icon,
+  BookOpen01Icon,
 } from "@hugeicons/core-free-icons";
 import {
   Sheet,
@@ -73,16 +78,62 @@ function IconButton({
   );
 }
 
+const settingsTabs = [
+  { value: "assets", icon: CubeIcon, label: "Assets" },
+  { value: "team", icon: UserMultiple02Icon, label: "Team" },
+  { value: "sites", icon: Globe02Icon, label: "Sites" },
+  { value: "dashboard", icon: DashboardSquare01Icon, label: "Dashboard" },
+  { value: "catalog", icon: BookOpen01Icon, label: "Catalog" },
+] as const;
+
 function SettingsSheet() {
+  const [activeTab, setActiveTab] =
+    useState<(typeof settingsTabs)[number]["value"]>("assets");
   return (
     <Sheet>
       <SheetTrigger asChild>
         <IconButton icon={Menu02Icon} label="Settings" />
       </SheetTrigger>
-      <SheetContent side="right">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        className="p-0 data-[side=right]:w-[90vw] data-[side=right]:sm:max-w-[1000px]"
+      >
+        <SheetHeader className="sr-only">
           <SheetTitle>Settings</SheetTitle>
         </SheetHeader>
+        <div className="flex h-full flex-col">
+          <nav
+            aria-label="Settings sections"
+            className="flex h-14 shrink-0 items-center gap-5 border-b border-border px-20"
+          >
+            {settingsTabs.map((t) => {
+              const active = t.value === activeTab;
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setActiveTab(t.value)}
+                  className={`flex h-8 items-center gap-2 rounded-md px-2.5 font-medium outline-none transition-colors ${
+                    active
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <HugeiconsIcon
+                    icon={t.icon}
+                    strokeWidth={2.25}
+                    className="size-[18px]"
+                  />
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+          <div className="min-h-40 shrink-0 border-b border-border bg-muted/60 dark:bg-muted/40" />
+          <div className="flex-1 bg-muted/20 dark:bg-background/60" />
+        </div>
       </SheetContent>
     </Sheet>
   );
