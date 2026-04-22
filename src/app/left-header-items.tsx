@@ -110,12 +110,8 @@ export function LeftHeaderItems() {
               onSelect={create}
               className="focus:bg-primary/10 focus:text-foreground"
             >
-              <span className="flex size-5 items-center justify-center rounded-full bg-primary">
-                <HugeiconsIcon
-                  icon={PlusSignIcon}
-                  strokeWidth={2.5}
-                  style={{ color: "white" }}
-                />
+              <span className="flex size-5 items-center justify-center rounded-full bg-primary [&_*]:text-white!">
+                <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2.5} />
               </span>
               New Simulation
             </DropdownMenuItem>
