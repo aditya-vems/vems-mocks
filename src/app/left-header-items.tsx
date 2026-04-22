@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowDown01Icon,
-  MoreHorizontalIcon,
-  Edit02Icon,
-  Delete02Icon,
-  PlusSignIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import { LogoLine } from "@v-ems/element/brand";
 import {
   DropdownMenu,
@@ -57,7 +52,7 @@ export function LeftHeaderItems() {
       <LogoLine height={20} />
       <Separator orientation="vertical" className="h-8 bg-foreground/20" />
       <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger className="flex items-center text-[15px] gap-2 outline-none">
+        <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
           <span>{selected?.name ?? "No Simulation"}</span>
           <HugeiconsIcon
             icon={ArrowDown01Icon}
@@ -66,43 +61,65 @@ export function LeftHeaderItems() {
             className={`text-foreground/50 transition-transform duration-300 ${open && "rotate-180"}`}
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" className="min-w-64" sideOffset={18}>
-          {sims.map((sim) => (
+        <DropdownMenuContent
+          align="center"
+          sideOffset={17}
+          className="min-w-52 overflow-hidden p-0"
+        >
+          <div className="max-h-64 overflow-y-auto py-2">
+            {sims.map((sim) => (
+              <DropdownMenuItem
+                key={sim.id}
+                className="group flex items-center justify-between gap-2"
+                onSelect={() => setSelectedId(sim.id)}
+              >
+                <span>{sim.name}</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    aria-label={`Actions for ${sim.name}`}
+                    className="rounded opacity-0 outline-none group-hover:opacity-100 focus-visible:opacity-100"
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    onPointerDown={(e: React.PointerEvent) =>
+                      e.stopPropagation()
+                    }
+                  >
+                    <EllipsisVerticalIcon className="size-5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="center"
+                    side="right"
+                    className="min-w-40"
+                  >
+                    <DropdownMenuItem onSelect={() => rename(sim.id)}>
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={() => remove(sim.id)}
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </DropdownMenuItem>
+            ))}
+          </div>
+          <DropdownMenuSeparator className="my-0" />
+          <div className="py-2">
             <DropdownMenuItem
-              key={sim.id}
-              className="group flex items-center justify-between gap-2"
-              onSelect={() => setSelectedId(sim.id)}
+              onSelect={create}
+              className="focus:bg-primary/10 focus:text-foreground"
             >
-              <span>{sim.name}</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  aria-label={`Actions for ${sim.name}`}
-                  className="rounded opacity-0 outline-none group-hover:opacity-100 focus-visible:opacity-100"
-                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
-                >
-                  <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" side="right">
-                  <DropdownMenuItem onSelect={() => rename(sim.id)}>
-                    <HugeiconsIcon icon={Edit02Icon} size={14} />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => remove(sim.id)}>
-                    <HugeiconsIcon icon={Delete02Icon} size={14} />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <span className="flex size-5 items-center justify-center rounded-full bg-primary">
+                <HugeiconsIcon
+                  icon={PlusSignIcon}
+                  strokeWidth={2.5}
+                  style={{ color: "white" }}
+                />
+              </span>
+              New Simulation
             </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={create}>
-            <span className="flex size-5 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground transition-colors">
-              <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2.5} />
-            </span>
-            New Simulation
-          </DropdownMenuItem>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

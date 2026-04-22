@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  SlidersVerticalIcon,
+  Atom01Icon,
   PlayCircleIcon,
   PresentationBarChart01Icon,
 } from "@hugeicons/core-free-icons";
@@ -9,11 +9,11 @@ import {
 type TabDef = {
   to: string;
   label: string;
-  icon: typeof SlidersVerticalIcon;
+  icon: typeof Atom01Icon;
 };
 
 const tabs: TabDef[] = [
-  { to: "/simulate", label: "Simulate", icon: SlidersVerticalIcon },
+  { to: "/simulate", label: "Simulate", icon: Atom01Icon },
   { to: "/run", label: "Run", icon: PlayCircleIcon },
   { to: "/analyze", label: "Analyze", icon: PresentationBarChart01Icon },
 ];
@@ -26,7 +26,7 @@ export function CenterHeaderItems() {
           key={tab.to}
           to={tab.to}
           className={({ isActive }) =>
-            `flex items-center gap-2 text-[15px] transition-colors ${
+            `flex items-center gap-2 transition-colors ${
               isActive
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground"
