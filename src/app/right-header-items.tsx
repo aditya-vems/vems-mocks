@@ -16,11 +16,12 @@ import {
   PlayCircleIcon,
   Database02Icon,
   ArrowLeft01Icon,
-  CubeIcon,
   UserMultiple02Icon,
-  Globe02Icon,
-  DashboardSquare01Icon,
+  VirtualRealityVr01Icon,
+  DashboardCircleAddIcon,
   BookOpen01Icon,
+  Blockchain01Icon,
+  PanelRightCloseIcon,
 } from "@hugeicons/core-free-icons";
 import {
   Sheet,
@@ -28,6 +29,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetClose,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -79,10 +81,10 @@ function IconButton({
 }
 
 const settingsTabs = [
-  { value: "assets", icon: CubeIcon, label: "Assets" },
+  { value: "assets", icon: Blockchain01Icon, label: "Assets" },
   { value: "team", icon: UserMultiple02Icon, label: "Team" },
-  { value: "sites", icon: Globe02Icon, label: "Sites" },
-  { value: "dashboard", icon: DashboardSquare01Icon, label: "Dashboard" },
+  { value: "sites", icon: VirtualRealityVr01Icon, label: "Sites" },
+  { value: "dashboard", icon: DashboardCircleAddIcon, label: "Dashboard" },
   { value: "catalog", icon: BookOpen01Icon, label: "Catalog" },
 ] as const;
 
@@ -115,7 +117,7 @@ function SettingsSheet() {
                   type="button"
                   aria-current={active ? "page" : undefined}
                   onClick={() => setActiveTab(t.value)}
-                  className={`flex h-8 items-center gap-2 rounded-md px-2.5 font-medium outline-none transition-colors ${
+                  className={`flex h-8 items-center gap-2 rounded-md px-2.5 outline-none transition-colors ${
                     active
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -130,6 +132,19 @@ function SettingsSheet() {
                 </button>
               );
             })}
+            <SheetClose asChild>
+              <button
+                type="button"
+                aria-label="Close settings"
+                className="ml-auto flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground"
+              >
+                <HugeiconsIcon
+                  icon={PanelRightCloseIcon}
+                  strokeWidth={2.25}
+                  className="size-[18px]"
+                />
+              </button>
+            </SheetClose>
           </nav>
           <div className="min-h-40 shrink-0 border-b border-border bg-muted/60 dark:bg-muted/40" />
           <div className="flex-1 bg-muted/20 dark:bg-background/60" />
@@ -547,7 +562,7 @@ function NotificationsPopover() {
                   >
                     {systemGroups.map(([bucket, items]) => (
                       <li key={bucket} className="list-none">
-                        <div className="sticky top-0 z-[1] border-b border-border bg-popover/95 px-5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase backdrop-blur-sm">
+                        <div className="sticky top-0 z-1 border-b border-border bg-popover/95 px-5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase backdrop-blur-sm">
                           {bucketLabels[bucket]}
                         </div>
                         <ul className="divide-y divide-border/50">
@@ -614,7 +629,7 @@ function NotificationsPopover() {
                   >
                     {inviteGroups.map(([bucket, items]) => (
                       <li key={bucket} className="list-none">
-                        <div className="sticky top-0 z-[1] border-b border-border bg-popover/95 px-5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase backdrop-blur-sm">
+                        <div className="sticky top-0 z-1 border-b border-border bg-popover/95 px-5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase backdrop-blur-sm">
                           {bucketLabels[bucket]}
                         </div>
                         <ul className="divide-y divide-border/50">
@@ -723,7 +738,7 @@ function NotificationDetail({
         <button
           onClick={onBack}
           aria-label="Back"
-          className="flex h-8 items-center gap-1.5 rounded-full px-3 font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground"
+          className="flex h-8 items-center gap-1.5 rounded-full px-3 text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground"
         >
           <HugeiconsIcon
             icon={ArrowLeft01Icon}
