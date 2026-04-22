@@ -54,7 +54,7 @@ export function LeftHeaderItems() {
 
   return (
     <div className="flex items-center gap-4">
-      <LogoLine height={24} />
+      <LogoLine height={20} />
       <Separator orientation="vertical" className="h-8 bg-foreground/20" />
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger className="flex items-center text-[15px] gap-2 outline-none">
@@ -62,6 +62,7 @@ export function LeftHeaderItems() {
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             size={16}
+            strokeWidth={2.5}
             className={`text-foreground/50 transition-transform duration-300 ${open && "rotate-180"}`}
           />
         </DropdownMenuTrigger>

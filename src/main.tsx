@@ -5,8 +5,6 @@ import { ThemeProvider } from "next-themes";
 import { router } from "@/app/router";
 import "./globals.css";
 
-localStorage.removeItem("theme");
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
