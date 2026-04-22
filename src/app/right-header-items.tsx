@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -37,6 +37,7 @@ import {
   TabsContent,
   ScrollArea,
   Avatar,
+  AvatarImage,
   AvatarFallback,
   Badge,
   truncate,
@@ -115,7 +116,7 @@ const systemNotifs: SystemNotif[] = [
   {
     id: "s1",
     icon: CheckmarkCircle02Icon,
-    title: "Simulation run completed",
+    title: "Simulation Run Completed",
     desc: "Traffic Sim #42 finished in 3m 12s across 120 scenarios, with all assertions passing on the production branch.",
     time: "2m ago",
     unread: true,
@@ -123,7 +124,7 @@ const systemNotifs: SystemNotif[] = [
   {
     id: "s2",
     icon: PresentationBarChart01Icon,
-    title: "Analysis ready",
+    title: "Analysis Ready",
     desc: "Results for Lane Merge scenario are available to review. Coverage increased by 4.2% over last run.",
     time: "1h ago",
     unread: true,
@@ -131,30 +132,72 @@ const systemNotifs: SystemNotif[] = [
   {
     id: "s3",
     icon: PlayCircleIcon,
-    title: "Scheduled run started",
+    title: "Scheduled Run Started",
     desc: "Weekly validation suite is underway across 18 scenarios. Estimated completion time is 42 minutes.",
     time: "4h ago",
   },
   {
     id: "s4",
     icon: Database02Icon,
-    title: "Dataset updated",
+    title: "Dataset Updated",
     desc: "Highway corpus v2.3 has been published to your workspace. 312 new clips were added from the March drives.",
     time: "Yesterday",
   },
   {
     id: "s5",
     icon: CheckmarkCircle02Icon,
-    title: "Export complete",
+    title: "Export Complete",
     desc: "Run summary.csv is ready to download. The export contains 2,841 rows covering all runs from April.",
     time: "2d ago",
   },
   {
     id: "s6",
     icon: PresentationBarChart01Icon,
-    title: "Weekly report generated",
+    title: "Weekly Report Generated",
     desc: "Fleet coverage metrics for week 16 are available. Urban scenarios led with 94% scenario pass rate.",
     time: "3d ago",
+  },
+  {
+    id: "s7",
+    icon: Database02Icon,
+    title: "Index Rebuild Finished",
+    desc: "Scenario search index rebuilt in 6m 41s. All 1.2M entries are now queryable with updated embeddings.",
+    time: "4d ago",
+  },
+  {
+    id: "s8",
+    icon: PlayCircleIcon,
+    title: "Regression Suite Queued",
+    desc: "Nightly regression for the perception stack is queued behind two higher-priority jobs. ETA 22 minutes.",
+    time: "5d ago",
+  },
+  {
+    id: "s9",
+    icon: CheckmarkCircle02Icon,
+    title: "Calibration Verified",
+    desc: "Sensor calibration against the April reference set passed all 14 checkpoints within tolerance.",
+    time: "6d ago",
+  },
+  {
+    id: "s10",
+    icon: PresentationBarChart01Icon,
+    title: "A/B Test Summary Posted",
+    desc: "Planner v2 vs v1 across 400 scenarios: collision-free rate up 2.8%, intervention rate down 1.4%.",
+    time: "1w ago",
+  },
+  {
+    id: "s11",
+    icon: Database02Icon,
+    title: "Storage Quota Alert",
+    desc: "Workspace 'Urban Perception' is at 86% of its 2TB quota. Consider archiving older run artifacts.",
+    time: "1w ago",
+  },
+  {
+    id: "s12",
+    icon: PlayCircleIcon,
+    title: "Replay Build Ready",
+    desc: "Deterministic replay build 2026.4.22-a is available for download on macOS, Linux, and Windows.",
+    time: "2w ago",
   },
 ];
 
@@ -189,28 +232,106 @@ const invites: Invite[] = [
     project: "Edge Case Library",
     time: "2d ago",
   },
+  {
+    id: "i5",
+    name: "Anika Shah",
+    action: "requested review on",
+    project: "Interchange Merge v3",
+    time: "3d ago",
+    unread: true,
+  },
+  {
+    id: "i6",
+    name: "Diego Ramirez",
+    action: "invited you to",
+    project: "Harbor Dock Replay",
+    time: "4d ago",
+  },
+  {
+    id: "i7",
+    name: "Yuna Watanabe",
+    action: "shared",
+    project: "Tunnel Lighting Bench",
+    time: "5d ago",
+  },
+  {
+    id: "i8",
+    name: "Ethan Brooks",
+    action: "added you to",
+    project: "Rural Corridor Sweep",
+    time: "1w ago",
+  },
+  {
+    id: "i9",
+    name: "Hana Novak",
+    action: "requested review on",
+    project: "Roundabout Yield Study",
+    time: "1w ago",
+  },
 ];
 
-const POPOVER_HEIGHT = 430;
+const POPOVER_HEIGHT = 480;
+
+const MORPH_MS = 380;
+
+type Bucket = "today" | "week" | "earlier";
+
+function bucketOf(time: string): Bucket {
+  if (time.endsWith("m ago") || time.endsWith("h ago")) return "today";
+  if (time === "Yesterday") return "week";
+  const dMatch = time.match(/^(\d+)d ago$/);
+  if (dMatch) return Number(dMatch[1]) < 7 ? "week" : "earlier";
+  return "earlier";
+}
+
+const bucketLabels: Record<Bucket, string> = {
+  today: "Today",
+  week: "This Week",
+  earlier: "Earlier",
+};
+
+function groupByBucket<T extends { time: string }>(items: T[]): [Bucket, T[]][] {
+  const order: Bucket[] = ["today", "week", "earlier"];
+  const map = new Map<Bucket, T[]>();
+  for (const it of items) {
+    const b = bucketOf(it.time);
+    if (!map.has(b)) map.set(b, []);
+    map.get(b)!.push(it);
+  }
+  return order.filter((b) => map.has(b)).map((b) => [b, map.get(b)!]);
+}
+
+const tabTriggerClass =
+  "h-10 text-base group-data-horizontal/tabs:after:bottom-0 group-data-horizontal/tabs:after:h-[2px] data-[state=active]:text-primary data-[state=active]:hover:text-primary data-[state=active]:after:bg-primary";
+
+function avatarUrl(seed: string) {
+  return `https://i.pravatar.cc/96?u=${encodeURIComponent(seed)}`;
+}
 
 function NotificationsPopover() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [origin, setOrigin] = useState<Origin | null>(null);
   const [animIn, setAnimIn] = useState(false);
+  const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const systemListRef = useRef<HTMLUListElement>(null);
+  const invitesListRef = useRef<HTMLUListElement>(null);
+  const originElRef = useRef<HTMLElement | null>(null);
+  const skipAutoFocusRef = useRef(false);
+  const [activeTab, setActiveTab] = useState<"system" | "invites">("system");
+
   const unreadSystem = systemNotifs.filter((n) => n.unread).length;
   const unreadInvites = invites.filter((i) => i.unread).length;
   const totalUnread = unreadSystem + unreadInvites;
-  const triggerClass =
-    "h-12 text-base group-data-horizontal/tabs:after:bottom-[-1px] group-data-horizontal/tabs:after:h-[2px] data-[state=active]:text-primary data-[state=active]:hover:text-primary data-[state=active]:after:bg-primary";
 
-  const openDetail = (
-    item: Detail,
-    e: React.MouseEvent<HTMLLIElement>,
-  ) => {
+  const systemGroups = groupByBucket(systemNotifs);
+  const inviteGroups = groupByBucket(invites);
+
+  const openDetailFromEl = (item: Detail, el: HTMLElement) => {
     if (!containerRef.current) return;
     const parent = containerRef.current.getBoundingClientRect();
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    originElRef.current = el;
     setOrigin({
       top: rect.top - parent.top,
       left: rect.left - parent.left,
@@ -218,6 +339,7 @@ function NotificationsPopover() {
       height: rect.height,
     });
     setDetail(item);
+    setClosing(false);
     setAnimIn(false);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setAnimIn(true));
@@ -225,11 +347,17 @@ function NotificationsPopover() {
   };
 
   const closeDetail = () => {
-    setAnimIn(false);
+    setClosing(true);
+    skipAutoFocusRef.current = true;
+    const originEl = originElRef.current;
     window.setTimeout(() => {
       setDetail(null);
       setOrigin(null);
-    }, 300);
+      setClosing(false);
+      setAnimIn(false);
+      originEl?.focus({ preventScroll: true });
+      originElRef.current = null;
+    }, 280);
   };
 
   const handleOpenChange = (o: boolean) => {
@@ -237,8 +365,58 @@ function NotificationsPopover() {
       setDetail(null);
       setOrigin(null);
       setAnimIn(false);
+      setClosing(false);
     }
   };
+
+  const focusListItem = (
+    listRef: React.RefObject<HTMLUListElement | null>,
+    index: number,
+  ) => {
+    const items = listRef.current?.querySelectorAll<HTMLLIElement>(
+      "li[data-notif-item]",
+    );
+    if (!items || items.length === 0) return;
+    const clamped = Math.max(0, Math.min(index, items.length - 1));
+    items[clamped]?.focus();
+  };
+
+  const onListKeyDown = (
+    listRef: React.RefObject<HTMLUListElement | null>,
+  ) => (e: React.KeyboardEvent<HTMLUListElement>) => {
+    const target = e.target as HTMLElement;
+    const items = Array.from(
+      listRef.current?.querySelectorAll<HTMLLIElement>("li[data-notif-item]") ??
+        [],
+    );
+    const currentIndex = items.indexOf(target as HTMLLIElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      focusListItem(listRef, currentIndex < 0 ? 0 : currentIndex + 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      focusListItem(listRef, currentIndex < 0 ? 0 : currentIndex - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      focusListItem(listRef, 0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      focusListItem(listRef, items.length - 1);
+    }
+  };
+
+  useEffect(() => {
+    if (detail) return;
+    if (skipAutoFocusRef.current) {
+      skipAutoFocusRef.current = false;
+      return;
+    }
+    const t = window.setTimeout(() => {
+      const ref = activeTab === "system" ? systemListRef : invitesListRef;
+      focusListItem(ref, 0);
+    }, 20);
+    return () => window.clearTimeout(t);
+  }, [activeTab, detail]);
 
   return (
     <Popover onOpenChange={handleOpenChange}>
@@ -248,12 +426,19 @@ function NotificationsPopover() {
       <PopoverContent
         align="end"
         sideOffset={13}
-        className="w-[420px] overflow-hidden p-0"
+        className="w-[440px] overflow-hidden p-0"
         onEscapeKeyDown={(e: KeyboardEvent) => {
           if (detail) {
             e.preventDefault();
             closeDetail();
           }
+        }}
+        onOpenAutoFocus={(e: Event) => {
+          e.preventDefault();
+          window.setTimeout(() => {
+            const ref = activeTab === "system" ? systemListRef : invitesListRef;
+            focusListItem(ref, 0);
+          }, 20);
         }}
       >
         <div
@@ -262,93 +447,180 @@ function NotificationsPopover() {
           style={{ height: POPOVER_HEIGHT }}
         >
           <div className="absolute inset-0 flex flex-col">
-            <div className="flex items-center justify-between px-5 pt-4 pb-3">
-              <div className="text-base font-semibold">Notifications</div>
-              {totalUnread > 0 && <Badge>{totalUnread} Unread</Badge>}
+            <div className="flex items-center justify-between gap-3 px-5 py-4">
+              <div className="flex flex-col gap-0.5">
+                <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                  Notifications
+                </h2>
+                <p className="text-sm leading-none text-muted-foreground">
+                  {totalUnread > 0
+                    ? `${totalUnread} unread ${totalUnread === 1 ? "message" : "messages"}`
+                    : "You're all caught up"}
+                </p>
+              </div>
+              {totalUnread > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="h-6 rounded-full px-2.5 text-sm font-medium"
+                >
+                  {totalUnread}
+                </Badge>
+              )}
             </div>
-            <Tabs defaultValue="system" className="flex flex-1 flex-col gap-0">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v: string) => setActiveTab(v as "system" | "invites")}
+              className="flex flex-1 flex-col gap-0 overflow-hidden"
+            >
               <TabsList
                 variant="line"
-                className="h-12 w-full shrink-0 rounded-none border-b p-0"
+                className="h-10 w-full shrink-0 rounded-none p-0"
               >
-                <TabsTrigger value="system" className={triggerClass}>
+                <TabsTrigger value="system" className={tabTriggerClass}>
                   System
                 </TabsTrigger>
-                <TabsTrigger value="invites" className={triggerClass}>
+                <TabsTrigger value="invites" className={tabTriggerClass}>
                   Invites
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="system" className="mt-0 flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <ul className="divide-y divide-border/50">
-                    {systemNotifs.map((n) => (
-                      <li
-                        key={n.id}
-                        onClick={(e) =>
-                          openDetail({ type: "system", item: n }, e)
-                        }
-                        className="relative flex cursor-pointer items-start gap-3 px-5 py-3.5 transition-colors hover:bg-accent/50"
-                      >
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                          <HugeiconsIcon
-                            icon={n.icon}
-                            strokeWidth={2}
-                            className="size-[18px]"
-                          />
+              <div className="mt-1.5 h-px shrink-0 bg-border" />
+              <TabsContent
+                value="system"
+                className="mt-0 flex-1 overflow-hidden"
+              >
+                <ScrollArea className="no-scrollbar h-full">
+                  <ul
+                    ref={systemListRef}
+                    onKeyDown={onListKeyDown(systemListRef)}
+                    className="outline-none"
+                  >
+                    {systemGroups.map(([bucket, items]) => (
+                      <li key={bucket} className="list-none">
+                        <div className="sticky top-0 z-[1] border-b border-border bg-popover/95 px-5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase backdrop-blur-sm">
+                          {bucketLabels[bucket]}
                         </div>
-                        <div className="min-w-0 flex-1 pr-3">
-                          <div className="text-sm font-semibold text-foreground">
-                            {truncate(n.title, 40)}
-                          </div>
-                          <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground break-words">
-                            {truncate(n.desc, 90)}
-                          </p>
-                          <div className="mt-1.5 text-xs text-muted-foreground/70">
-                            {n.time}
-                          </div>
-                        </div>
-                        {n.unread && (
-                          <span className="absolute top-5 right-5 size-2 rounded-full bg-primary" />
-                        )}
+                        <ul className="divide-y divide-border/50">
+                          {items.map((n) => (
+                            <li
+                              key={n.id}
+                              data-notif-item
+                              tabIndex={0}
+                              onClick={(e) =>
+                                openDetailFromEl(
+                                  { type: "system", item: n },
+                                  e.currentTarget,
+                                )
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  openDetailFromEl(
+                                    { type: "system", item: n },
+                                    e.currentTarget,
+                                  );
+                                }
+                              }}
+                              className="relative flex cursor-pointer items-start gap-3 px-5 py-3.5 outline-none transition-colors hover:bg-accent/50 focus:bg-accent/50"
+                            >
+                              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                                <HugeiconsIcon
+                                  icon={n.icon}
+                                  strokeWidth={2}
+                                  className="size-[18px]"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1 pr-3">
+                                <div className="font-semibold text-foreground">
+                                  {truncate(n.title, 40)}
+                                </div>
+                                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground break-words">
+                                  {truncate(n.desc, 90)}
+                                </p>
+                                <div className="mt-1.5 text-sm text-muted-foreground/70">
+                                  {n.time}
+                                </div>
+                              </div>
+                              {n.unread && (
+                                <span className="absolute top-5 right-5 size-2 rounded-full bg-primary" />
+                              )}
+                            </li>
+                          ))}
+                        </ul>
                       </li>
                     ))}
                   </ul>
                 </ScrollArea>
               </TabsContent>
-              <TabsContent value="invites" className="mt-0 flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <ul className="divide-y divide-border/50">
-                    {invites.map((i) => (
-                      <li
-                        key={i.id}
-                        onClick={(e) =>
-                          openDetail({ type: "invite", item: i }, e)
-                        }
-                        className="relative flex cursor-pointer items-start gap-3 px-5 py-3.5 transition-colors hover:bg-accent/50"
-                      >
-                        <Avatar className="size-10 shrink-0">
-                          <AvatarFallback className="bg-muted text-xs font-semibold">
-                            {initials(i.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1 pr-3">
-                          <p className="text-sm leading-relaxed break-words">
-                            <span className="font-semibold">{i.name}</span>
-                            <span className="text-muted-foreground">
-                              {" "}
-                              {i.action}{" "}
-                            </span>
-                            <span className="font-semibold">
-                              {truncate(i.project, 32)}
-                            </span>
-                          </p>
-                          <div className="mt-1.5 text-xs text-muted-foreground/70">
-                            {i.time}
-                          </div>
+              <TabsContent
+                value="invites"
+                className="mt-0 flex-1 overflow-hidden"
+              >
+                <ScrollArea className="no-scrollbar h-full">
+                  <ul
+                    ref={invitesListRef}
+                    onKeyDown={onListKeyDown(invitesListRef)}
+                    className="outline-none"
+                  >
+                    {inviteGroups.map(([bucket, items]) => (
+                      <li key={bucket} className="list-none">
+                        <div className="sticky top-0 z-[1] border-b border-border bg-popover/95 px-5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase backdrop-blur-sm">
+                          {bucketLabels[bucket]}
                         </div>
-                        {i.unread && (
-                          <span className="absolute top-5 right-5 size-2 rounded-full bg-primary" />
-                        )}
+                        <ul className="divide-y divide-border/50">
+                          {items.map((i) => (
+                            <li
+                              key={i.id}
+                              data-notif-item
+                              tabIndex={0}
+                              onClick={(e) =>
+                                openDetailFromEl(
+                                  { type: "invite", item: i },
+                                  e.currentTarget,
+                                )
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  openDetailFromEl(
+                                    { type: "invite", item: i },
+                                    e.currentTarget,
+                                  );
+                                }
+                              }}
+                              className="relative flex cursor-pointer items-start gap-3 px-5 py-3.5 outline-none transition-colors hover:bg-accent/50 focus:bg-accent/50"
+                            >
+                              <Avatar className="size-10 shrink-0">
+                                <AvatarImage
+                                  src={avatarUrl(i.name)}
+                                  alt=""
+                                />
+                                <AvatarFallback className="bg-muted font-medium">
+                                  {initials(i.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1 pr-3">
+                                <p className="leading-relaxed break-words">
+                                  <span className="font-medium text-foreground">
+                                    {i.name}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {" "}
+                                    {i.action}{" "}
+                                  </span>
+                                  <span className="font-medium text-foreground">
+                                    {truncate(i.project, 32)}
+                                  </span>
+                                </p>
+                                <div className="mt-1.5 text-sm text-muted-foreground/70">
+                                  {i.time}
+                                </div>
+                              </div>
+                              {i.unread && (
+                                <span className="absolute top-5 right-5 size-2 rounded-full bg-primary" />
+                              )}
+                            </li>
+                          ))}
+                        </ul>
                       </li>
                     ))}
                   </ul>
@@ -357,27 +629,30 @@ function NotificationsPopover() {
             </Tabs>
           </div>
 
-          {detail && origin && (
-            <div
-              className="absolute z-10 overflow-hidden bg-popover shadow-lg ring-1 ring-foreground/5 transition-all duration-300 ease-out"
-              style={
-                animIn
-                  ? { top: 0, left: 0, width: "100%", height: "100%" }
-                  : {
-                      top: origin.top,
-                      left: origin.left,
-                      width: origin.width,
-                      height: origin.height,
-                    }
-              }
-            >
+          {detail && origin && (() => {
+            const fullW = containerRef.current?.clientWidth ?? 440;
+            const fullH = POPOVER_HEIGHT;
+            const isFull = animIn && !closing;
+            return (
               <div
-                className={`h-full transition-opacity duration-200 ${animIn ? "opacity-100 delay-150" : "opacity-0"}`}
+                className="absolute z-10 overflow-hidden bg-popover ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[top,left,width,height] transition-[top,left,width,height]"
+                style={{
+                  top: isFull ? 0 : origin.top,
+                  left: isFull ? 0 : origin.left,
+                  width: isFull ? fullW : origin.width,
+                  height: isFull ? fullH : origin.height,
+                  transitionDuration: closing ? "280ms" : `${MORPH_MS}ms`,
+                }}
               >
-                <NotificationDetail detail={detail} onBack={closeDetail} />
+                <div
+                  className={`absolute top-0 left-0 transition-opacity ease-out ${isFull ? "opacity-100 delay-150 duration-200" : "opacity-0 duration-120"}`}
+                  style={{ width: fullW, height: fullH }}
+                >
+                  <NotificationDetail detail={detail} onBack={closeDetail} />
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </PopoverContent>
     </Popover>
@@ -393,11 +668,11 @@ function NotificationDetail({
 }) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-3 py-2.5">
+      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
         <button
           onClick={onBack}
           aria-label="Back"
-          className="flex h-8 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground"
+          className="flex h-8 items-center gap-1.5 rounded-full px-3 font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground"
         >
           <HugeiconsIcon
             icon={ArrowLeft01Icon}
@@ -407,7 +682,7 @@ function NotificationDetail({
           Back
         </button>
       </div>
-      <ScrollArea className="flex-1">
+      <ScrollArea className="no-scrollbar min-h-0 flex-1">
         <div className="flex flex-col gap-4 px-5 py-5">
           {detail.type === "system" ? (
             <>
@@ -420,15 +695,15 @@ function NotificationDetail({
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-base font-semibold text-foreground">
+                  <div className="font-semibold text-foreground">
                     {detail.item.title}
                   </div>
-                  <div className="text-xs text-muted-foreground/70">
+                  <div className="text-muted-foreground/70">
                     {detail.item.time}
                   </div>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed text-foreground/90">
+              <p className="leading-relaxed text-foreground/90">
                 {detail.item.desc}
               </p>
             </>
@@ -436,37 +711,40 @@ function NotificationDetail({
             <>
               <div className="flex items-center gap-3">
                 <Avatar className="size-12 shrink-0">
-                  <AvatarFallback className="bg-muted text-sm font-semibold">
+                  <AvatarImage src={avatarUrl(detail.item.name)} alt="" />
+                  <AvatarFallback className="bg-muted font-medium">
                     {initials(detail.item.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="text-base font-semibold text-foreground">
+                  <div className="font-semibold text-foreground">
                     {detail.item.name}
                   </div>
-                  <div className="text-xs text-muted-foreground/70">
+                  <div className="text-muted-foreground/70">
                     {detail.item.time}
                   </div>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed text-foreground/90">
+              <p className="leading-relaxed text-foreground/90">
                 <span className="text-muted-foreground">
                   {detail.item.action}{" "}
                 </span>
                 <span className="font-semibold">{detail.item.project}</span>
               </p>
-              <div className="flex gap-2">
-                <button className="flex h-9 flex-1 items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground outline-none transition-colors hover:bg-primary/90">
-                  Accept
-                </button>
-                <button className="flex h-9 flex-1 items-center justify-center rounded-md border border-border text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent">
-                  Decline
-                </button>
-              </div>
             </>
           )}
         </div>
       </ScrollArea>
+      {detail.type === "invite" && (
+        <div className="flex shrink-0 gap-2 border-t bg-popover px-5 py-3">
+          <button className="flex h-10 flex-1 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground outline-none transition-colors hover:bg-primary/90">
+            Accept
+          </button>
+          <button className="flex h-10 flex-1 items-center justify-center rounded-full border border-border font-medium text-foreground outline-none transition-colors hover:bg-accent">
+            Decline
+          </button>
+        </div>
+      )}
     </div>
   );
 }
