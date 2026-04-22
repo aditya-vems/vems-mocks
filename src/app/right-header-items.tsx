@@ -448,7 +448,7 @@ function NotificationsPopover() {
         >
           <div className="absolute inset-0 flex flex-col">
             <div className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1.5">
                 <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
                   Notifications
                 </h2>
