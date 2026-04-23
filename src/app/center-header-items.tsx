@@ -13,9 +13,9 @@ type TabDef = {
 };
 
 const tabs: TabDef[] = [
-  { to: "/simulate", label: "Simulate", icon: Atom01Icon },
-  { to: "/run", label: "Run", icon: PlayCircleIcon },
-  { to: "/analyze", label: "Analyze", icon: PresentationBarChart01Icon },
+  { to: "/run", label: "Chat", icon: PlayCircleIcon },
+  { to: "/simulate", label: "Scenario", icon: Atom01Icon },
+  { to: "/analyze", label: "Report", icon: PresentationBarChart01Icon },
 ];
 
 export function CenterHeaderItems() {
