@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -816,6 +817,7 @@ function NotificationDetail({
 }
 
 function AccountMenu() {
+  const navigate = useNavigate();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -845,7 +847,10 @@ function AccountMenu() {
           />
           <span className="flex-1">Add Account</span>
         </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive">
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => navigate("/sign-in")}
+        >
           <HugeiconsIcon
             icon={Logout01Icon}
             strokeWidth={2.25}

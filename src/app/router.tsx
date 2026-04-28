@@ -13,9 +13,11 @@ export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/sign-in" replace /> },
   { path: signInRoute.path, element: signInRoute.element },
   { path: verifyEmailRoute.path, element: verifyEmailRoute.element },
-  { path: homeRoute.path, element: homeRoute.element },
   {
     element: <Shell />,
-    children: routes.map((r) => ({ path: r.path, element: r.element })),
+    children: [
+      { path: homeRoute.path, element: homeRoute.element },
+      ...routes.map((r) => ({ path: r.path, element: r.element })),
+    ],
   },
 ]);
