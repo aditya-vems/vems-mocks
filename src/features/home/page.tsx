@@ -1,7 +1,15 @@
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Card,
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -16,133 +24,18 @@ import {
 } from "@v-ems/element";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  SlidersHorizontalIcon,
-  Search01Icon,
+  ArrowRight01Icon,
+  File01Icon,
   FilterMailIcon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
-
-type SimulationStatus = "active" | "draft" | "archived";
-
-type SimulationSummary = {
-  id: string;
-  name: string;
-  status: SimulationStatus;
-  reports: number;
-  comparisons: number;
-  owner: string;
-  updated: string;
-};
-
-const simulations: SimulationSummary[] = [
-  {
-    id: "sim-rooftop-solar",
-    name: "Rooftop Solar",
-    status: "active",
-    reports: 4,
-    comparisons: 2,
-    owner: "Aditya Sharma",
-    updated: "2d ago",
-  },
-  {
-    id: "sim-campus-microgrid",
-    name: "Campus Microgrid",
-    status: "active",
-    reports: 3,
-    comparisons: 1,
-    owner: "Jaya Krishnan",
-    updated: "1w ago",
-  },
-  {
-    id: "sim-battery-backup",
-    name: "Battery Backup",
-    status: "draft",
-    reports: 2,
-    comparisons: 0,
-    owner: "Mira Reyes",
-    updated: "Apr 02",
-  },
-  {
-    id: "sim-fleet-charging",
-    name: "Fleet Charging",
-    status: "active",
-    reports: 5,
-    comparisons: 3,
-    owner: "Noah Lim",
-    updated: "3d ago",
-  },
-  {
-    id: "sim-peak-shaving",
-    name: "Peak Shaving",
-    status: "active",
-    reports: 2,
-    comparisons: 0,
-    owner: "Aditya Sharma",
-    updated: "1w ago",
-  },
-  {
-    id: "sim-demand-response",
-    name: "Demand Response",
-    status: "draft",
-    reports: 1,
-    comparisons: 0,
-    owner: "Jaya Krishnan",
-    updated: "2w ago",
-  },
-  {
-    id: "sim-wind-farm",
-    name: "Wind Farm Dispatch",
-    status: "active",
-    reports: 6,
-    comparisons: 4,
-    owner: "Mira Reyes",
-    updated: "4d ago",
-  },
-  {
-    id: "sim-ev-depot",
-    name: "EV Depot Scheduling",
-    status: "active",
-    reports: 3,
-    comparisons: 1,
-    owner: "Noah Lim",
-    updated: "Apr 08",
-  },
-  {
-    id: "sim-cold-chain",
-    name: "Cold Chain Resilience",
-    status: "archived",
-    reports: 2,
-    comparisons: 0,
-    owner: "Aditya Sharma",
-    updated: "Apr 11",
-  },
-  {
-    id: "sim-data-center",
-    name: "Data Center Cooling",
-    status: "active",
-    reports: 4,
-    comparisons: 2,
-    owner: "Jaya Krishnan",
-    updated: "Yesterday",
-  },
-  {
-    id: "sim-residential-vpp",
-    name: "Residential VPP",
-    status: "draft",
-    reports: 1,
-    comparisons: 0,
-    owner: "Mira Reyes",
-    updated: "2w ago",
-  },
-  {
-    id: "sim-hydrogen",
-    name: "Hydrogen Electrolyzer",
-    status: "active",
-    reports: 3,
-    comparisons: 1,
-    owner: "Noah Lim",
-    updated: "3d ago",
-  },
-];
+import { useMorph } from "@/app/morph-context";
+import { useSimulations } from "@/app/simulation-context";
+import type {
+  Report,
+  Simulation,
+  SimulationStatus,
+} from "@/data/simulations";
 
 const statusDot: Record<SimulationStatus, string> = {
   active: "bg-emerald-500",
@@ -178,118 +71,200 @@ const updatedOptions: { value: UpdatedFilter; label: string }[] = [
 
 const allStatuses: SimulationStatus[] = ["active", "draft", "archived"];
 
-function MetaPiece({
-  count,
-  singular,
-  plural,
-}: {
-  count: number;
-  singular: string;
-  plural: string;
-}) {
-  if (count === 0) return null;
-  return (
-    <span className="tabular-nums">
-      {count} {count === 1 ? singular : plural}
-    </span>
-  );
+const REPORTS_VISIBLE = 4;
+
+function avatarUrl(seed: string) {
+  return `https://i.pravatar.cc/96?u=${encodeURIComponent(seed)}`;
 }
 
-function SimulationRow({ simulation }: { simulation: SimulationSummary }) {
-  const meta: React.ReactNode[] = [];
-  if (simulation.reports > 0) {
-    meta.push(
-      <MetaPiece
-        key="reports"
-        count={simulation.reports}
-        singular="report"
-        plural="reports"
-      />,
-    );
-  }
-  if (simulation.comparisons > 0) {
-    meta.push(
-      <MetaPiece
-        key="comparisons"
-        count={simulation.comparisons}
-        singular="comparison"
-        plural="comparisons"
-      />,
-    );
-  }
-  if (meta.length === 0) {
-    meta.push(
-      <span key="empty" className="text-muted-foreground/60">
-        No reports yet
-      </span>,
-    );
-  }
-
+function ReportRow({
+  report,
+  onOpen,
+}: {
+  report: Report;
+  onOpen: (report: Report) => void;
+}) {
   return (
     <button
       type="button"
-      className="group flex w-full items-center gap-4 border-b border-border/50 px-2 py-3 text-left outline-none transition-colors last:border-b-0 hover:bg-accent/40 focus-visible:bg-accent/40"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen(report);
+      }}
+      className="group/report flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:bg-accent/50"
     >
-      <span
-        aria-hidden
-        className={`size-2 shrink-0 rounded-full ${statusDot[simulation.status]}`}
-        title={statusLabel[simulation.status]}
+      <HugeiconsIcon
+        icon={File01Icon}
+        strokeWidth={2}
+        className="size-4 shrink-0 text-muted-foreground transition-colors group-hover/report:text-foreground"
       />
       <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-        {simulation.name}
+        {report.name}
       </span>
-      <div className="hidden items-center gap-3 text-xs text-muted-foreground sm:flex">
-        {meta.map((node, i) => (
-          <span key={i} className="flex items-center gap-3">
-            {i > 0 ? (
-              <span aria-hidden className="text-muted-foreground/40">
-                ·
-              </span>
-            ) : null}
-            {node}
-          </span>
-        ))}
-      </div>
-      <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
-        {simulation.updated}
-      </span>
-      <Avatar
-        className="size-6 shrink-0"
-        title={`Owner: ${simulation.owner}`}
-      >
-        <AvatarFallback className="bg-muted text-[10px] font-medium">
-          {initials(simulation.owner)}
-        </AvatarFallback>
-      </Avatar>
     </button>
   );
 }
 
+function SimulationCard({
+  simulation,
+  onOpenSimulation,
+  onOpenReport,
+}: {
+  simulation: Simulation;
+  onOpenSimulation: (sim: Simulation, rect: DOMRect) => void;
+  onOpenReport: (sim: Simulation, report: Report) => void;
+}) {
+  const visibleReports = simulation.reports.slice(0, REPORTS_VISIBLE);
+  const remaining = simulation.reports.length - visibleReports.length;
+
+  function handleClick(e: MouseEvent<HTMLDivElement>) {
+    onOpenSimulation(simulation, e.currentTarget.getBoundingClientRect());
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpenSimulation(simulation, e.currentTarget.getBoundingClientRect());
+    }
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      className="group relative flex h-full flex-col gap-3 overflow-hidden rounded-lg border border-border/60 bg-background/40 p-4 outline-none transition-colors hover:border-border hover:bg-background/70 focus-visible:border-border focus-visible:bg-background/70"
+    >
+      <div className="flex h-6 items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <span
+            aria-hidden
+            className={`size-2 shrink-0 rounded-full ${statusDot[simulation.status]}`}
+          />
+          <span className="truncate text-base font-medium leading-none text-foreground">
+            {simulation.name}
+          </span>
+        </div>
+        <span className="flex h-full shrink-0 items-center text-xs leading-none text-muted-foreground transition-colors group-hover:text-foreground">
+          <span className="block transition-transform duration-200 ease-out group-hover:-translate-x-1">
+            {statusLabel[simulation.status]}
+          </span>
+          <span
+            aria-hidden
+            className="inline-flex h-full w-0 items-center overflow-hidden opacity-0 transition-[width,opacity] duration-200 ease-out group-hover:w-4 group-hover:opacity-100"
+          >
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              strokeWidth={2}
+              className="ml-0.5 size-3.5 shrink-0"
+            />
+          </span>
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="tabular-nums">
+          {simulation.reports.length}{" "}
+          {simulation.reports.length === 1 ? "report" : "reports"}
+        </span>
+        {simulation.comparisons > 0 ? (
+          <>
+            <span aria-hidden className="text-muted-foreground/40">
+              ·
+            </span>
+            <span className="tabular-nums">
+              {simulation.comparisons}{" "}
+              {simulation.comparisons === 1 ? "comparison" : "comparisons"}
+            </span>
+          </>
+        ) : null}
+      </div>
+
+      {simulation.reports.length > 0 ? (
+        <div className="-mx-2 flex flex-col">
+          {visibleReports.map((r) => (
+            <ReportRow
+              key={r.id}
+              report={r}
+              onOpen={(report) => onOpenReport(simulation, report)}
+            />
+          ))}
+          {remaining > 0 ? (
+            <span className="px-2 pt-1 text-xs text-muted-foreground/70">
+              +{remaining} more
+            </span>
+          ) : null}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground/60">No reports yet</p>
+      )}
+
+      <div className="-mx-4 mt-auto flex items-center justify-between border-t border-border/40 px-4 pt-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar className="size-6 shrink-0">
+            <AvatarImage
+              src={avatarUrl(simulation.owner)}
+              alt=""
+            />
+            <AvatarFallback className="bg-muted text-[11px] font-medium">
+              {initials(simulation.owner)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="truncate text-xs text-muted-foreground">
+            {simulation.owner}
+          </span>
+        </div>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          {simulation.updated}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function HomePage() {
+  const navigate = useNavigate();
+  const { simulations, setSelectedId, setActiveReportId } = useSimulations();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Set<SimulationStatus>>(
     new Set(),
   );
   const [ownerFilter, setOwnerFilter] = useState<Set<string>>(new Set());
   const [updatedFilter, setUpdatedFilter] = useState<UpdatedFilter>("any");
+  const cardRootRef = useRef<HTMLDivElement>(null);
+  const { startMorph } = useMorph();
 
   const owners = useMemo(
     () => Array.from(new Set(simulations.map((s) => s.owner))).sort(),
-    [],
+    [simulations],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return simulations.filter((s) => {
-      if (q && !s.name.toLowerCase().includes(q)) return false;
+      if (q) {
+        const matchesName = s.name.toLowerCase().includes(q);
+        const matchesReport = s.reports.some((r) =>
+          r.name.toLowerCase().includes(q),
+        );
+        if (!matchesName && !matchesReport) return false;
+      }
       if (statusFilter.size > 0 && !statusFilter.has(s.status)) return false;
       if (ownerFilter.size > 0 && !ownerFilter.has(s.owner)) return false;
       return true;
     });
-  }, [query, statusFilter, ownerFilter]);
+  }, [simulations, query, statusFilter, ownerFilter]);
 
-  const totalReports = filtered.reduce((acc, s) => acc + s.reports, 0);
-  const totalComparisons = filtered.reduce((acc, s) => acc + s.comparisons, 0);
+  const totalReports = filtered.reduce(
+    (acc, s) => acc + s.reports.length,
+    0,
+  );
+  const totalComparisons = filtered.reduce(
+    (acc, s) => acc + s.comparisons,
+    0,
+  );
   const activeCount = filtered.filter((s) => s.status === "active").length;
   const activeFilters =
     statusFilter.size +
@@ -320,9 +295,33 @@ export function HomePage() {
     setUpdatedFilter("any");
   }
 
+  function openSimulation(sim: Simulation, rect: DOMRect) {
+    const target = cardRootRef.current?.getBoundingClientRect();
+    if (!target) {
+      setSelectedId(sim.id);
+      setActiveReportId(null);
+      navigate("/simulate");
+      return;
+    }
+    startMorph(rect, target, () => {
+      setSelectedId(sim.id);
+      setActiveReportId(null);
+      navigate("/simulate");
+    });
+  }
+
+  function openReport(sim: Simulation, report: Report) {
+    setSelectedId(sim.id);
+    setActiveReportId(report.id);
+    navigate("/analyze");
+  }
+
   return (
-    <Card className="flex w-full min-h-0 flex-1 flex-col gap-0 overflow-hidden pt-0 ring-inset">
-      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-6">
+    <Card
+      ref={cardRootRef}
+      className="flex w-full min-h-0 flex-1 flex-col gap-0 overflow-hidden py-0 ring-inset"
+    >
+      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-6 animate-in fade-in-0 slide-in-from-top-2 duration-500 ease-out fill-mode-both">
         <HugeiconsIcon
           icon={Search01Icon}
           strokeWidth={2}
@@ -413,7 +412,10 @@ export function HomePage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="flex h-12 shrink-0 items-center gap-6 border-b border-border px-6">
+      <div
+        className="flex h-12 shrink-0 items-center gap-6 border-b border-border px-6 animate-in fade-in-0 slide-in-from-top-1 duration-500 ease-out fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
         <Metric label="Simulations" value={simulations.length} />
         <span aria-hidden className="h-4 w-px bg-border" />
         <Metric label="Active" value={activeCount} />
@@ -423,30 +425,37 @@ export function HomePage() {
         <Metric label="Comparisons" value={totalComparisons} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-[920px] flex-col gap-8 px-8 py-10">
-          <section className="flex flex-col">
-            <div className="flex h-9 items-center gap-4 border-b border-border px-2">
-              <span aria-hidden className="size-2 shrink-0" />
-              <span className="flex-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Name
-              </span>
-              <span className="hidden text-xs font-medium uppercase tracking-wider text-muted-foreground sm:block">
-                Activity
-              </span>
-              <span className="w-20 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Updated
-              </span>
-              <span className="w-6 shrink-0" />
+        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 px-8 py-8">
+          {filtered.length > 0 ? (
+            <div
+              className="grid gap-3"
+              style={{
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(320px, 1fr))",
+                gridAutoRows: "300px",
+              }}
+            >
+              {filtered.map((s, i) => (
+                <div
+                  key={s.id}
+                  className="animate-in fade-in-0 slide-in-from-bottom-2 duration-400 ease-out fill-mode-both"
+                  style={{
+                    animationDelay: `${Math.min(i, 8) * 35}ms`,
+                  }}
+                >
+                  <SimulationCard
+                    simulation={s}
+                    onOpenSimulation={openSimulation}
+                    onOpenReport={openReport}
+                  />
+                </div>
+              ))}
             </div>
-            {filtered.map((s) => (
-              <SimulationRow key={s.id} simulation={s} />
-            ))}
-            {filtered.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                No simulations match your filters
-              </div>
-            ) : null}
-          </section>
+          ) : (
+            <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+              No simulations match your filters
+            </div>
+          )}
         </div>
       </div>
     </Card>
