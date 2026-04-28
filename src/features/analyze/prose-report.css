@@ -1,0 +1,128 @@
+.prose-report {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+.prose-report > * + * {
+  margin-top: 1rem;
+}
+
+.prose-report h1 {
+  font-size: 1.875rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 0;
+  color: var(--foreground);
+}
+
+.prose-report h2 {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 600;
+  margin-top: 2rem;
+  color: var(--foreground);
+}
+
+.prose-report h3 {
+  font-size: 1rem;
+  line-height: 1.4;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  color: var(--foreground);
+}
+
+.prose-report p {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+.prose-report a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.prose-report strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.prose-report em {
+  font-style: italic;
+}
+
+.prose-report ul,
+.prose-report ol {
+  padding-left: 1.5rem;
+}
+
+.prose-report ul {
+  list-style: disc;
+}
+
+.prose-report ol {
+  list-style: decimal;
+}
+
+.prose-report ul li,
+.prose-report ol li {
+  margin-top: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+.prose-report ul li::marker {
+  color: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+}
+
+.prose-report ol li::marker {
+  color: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.prose-report blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+.prose-report code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+  background: color-mix(in oklch, var(--muted) 80%, transparent);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  color: var(--foreground);
+}
+
+.prose-report pre {
+  background: color-mix(in oklch, var(--muted) 70%, transparent);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.85em;
+}
+
+.prose-report pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.prose-report hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* TipTap placeholder */
+.prose-report p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
