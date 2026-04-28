@@ -1,11 +1,4 @@
-import {
-  Button,
-  FieldError,
-  FieldGroup,
-  Input,
-  Label,
-  Separator,
-} from "@v-ems/element";
+import { Button, FieldGroup, FloatingField, Separator } from "@v-ems/element";
 import { LogoLine } from "@v-ems/element/brand";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LockIcon } from "@hugeicons/core-free-icons";
@@ -73,95 +66,94 @@ export function SignInPage() {
         <main className="relative w-full flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col justify-center items-center py-8">
             <div className="flex flex-col gap-8 max-w-[520px] w-full px-6 sm:px-0">
-                <FieldGroup className="gap-4">
-                  <div className="flex flex-col gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out delay-[80ms] fill-mode-both">
-                    <div className="relative pt-5">
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder=" "
-                        value={email}
-                        aria-invalid={emailError !== null}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                          setEmail(e.target.value);
-                          if (emailError) setEmailError(null);
-                        }}
-                        className="peer h-11 rounded-none border-0 border-b border-border bg-transparent dark:bg-transparent px-0 text-base shadow-none placeholder:text-transparent transition-colors duration-300 ease-out focus-visible:border-foreground focus-visible:ring-0 aria-invalid:border-destructive aria-invalid:focus-visible:border-destructive aria-invalid:ring-0 dark:aria-invalid:ring-0"
-                      />
-                      <Label
-                        htmlFor="email"
-                        className="pointer-events-none absolute left-0 top-0 text-xs text-muted-foreground transition-all duration-300 ease-out peer-placeholder-shown:top-7.5 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-foreground peer-aria-invalid:text-destructive"
-                      >
-                        Email
-                      </Label>
-                    </div>
-                    <FieldError
-                      className={`transition-opacity duration-200 ease-out ${emailError ? "opacity-100" : "opacity-0"}`}
-                    >
-                      {emailError ?? " "}
-                    </FieldError>
-                  </div>
-                  <Button
-                    type="button"
-                    className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out delay-[160ms] fill-mode-both"
-                    onClick={handleEmailSignIn}
-                  >
-                    Sign In with Email
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full h-11 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out delay-[240ms] fill-mode-both"
-                    onClick={() => navigate("/home")}
-                  >
-                    Sign In with Passkey
-                  </Button>
-                </FieldGroup>
-                <div className="flex w-full items-center gap-4 animate-in fade-in-0 duration-500 ease-out delay-[320ms] fill-mode-both">
-                  <Separator className="flex-1" />
-                  <span className="text-xs tracking-widest text-muted-foreground">
-                    OR
-                  </span>
-                  <Separator className="flex-1" />
-                </div>
-                <FieldGroup className="gap-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out delay-[400ms] fill-mode-both"
-                    onClick={() => navigate("/home")}
-                  >
-                    Continue with Google
-                    <GoogleMark className="absolute right-4 top-1/2 -translate-y-1/2" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out delay-[480ms] fill-mode-both"
-                    onClick={() => navigate("/home")}
-                  >
-                    Continue with SAML
-                    <HugeiconsIcon
-                      icon={LockIcon}
-                      size={22}
-                      strokeWidth={1.75}
-                      className="absolute right-4 top-1/2 -translate-y-1/2"
-                    />
-                  </Button>
-                </FieldGroup>
-                <p className="text-center text-muted-foreground/50 animate-in fade-in-0 duration-500 ease-out delay-[560ms] fill-mode-both">
-                  New here?{" "}
-                  <a
-                    href={WEBSITE_URL}
-                    className="text-foreground transition-colors duration-200 ease-out hover:text-primary"
-                  >
-                    Explore VEMS!
-                  </a>
-                </p>
+              <FieldGroup className="gap-4">
+                <FloatingField
+                  id="email"
+                  type="email"
+                  label="Email"
+                  value={email}
+                  error={emailError}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    setEmail(e.target.value);
+                    if (emailError) setEmailError(null);
+                  }}
+                  className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+                  style={{ animationDelay: "80ms" }}
+                />
+                <Button
+                  type="button"
+                  className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+                  style={{ animationDelay: "160ms" }}
+                  onClick={handleEmailSignIn}
+                >
+                  Sign In with Email
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full h-11 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+                  style={{ animationDelay: "240ms" }}
+                  onClick={() => navigate("/home")}
+                >
+                  Sign In with Passkey
+                </Button>
+              </FieldGroup>
+              <div
+                className="flex w-full items-center gap-4 animate-in fade-in-0 duration-500 ease-out fill-mode-both"
+                style={{ animationDelay: "320ms" }}
+              >
+                <Separator className="flex-1" />
+                <span className="text-xs tracking-widest text-muted-foreground">
+                  OR
+                </span>
+                <Separator className="flex-1" />
               </div>
+              <FieldGroup className="gap-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+                  style={{ animationDelay: "400ms" }}
+                  onClick={() => navigate("/home")}
+                >
+                  Continue with Google
+                  <GoogleMark className="absolute right-4 top-1/2 -translate-y-1/2" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+                  style={{ animationDelay: "480ms" }}
+                  onClick={() => navigate("/home")}
+                >
+                  Continue with SAML
+                  <HugeiconsIcon
+                    icon={LockIcon}
+                    size={22}
+                    strokeWidth={1.75}
+                    className="absolute right-4 top-1/2 -translate-y-1/2"
+                  />
+                </Button>
+              </FieldGroup>
+              <p
+                className="text-center text-muted-foreground/50 animate-in fade-in-0 duration-500 ease-out fill-mode-both"
+                style={{ animationDelay: "560ms" }}
+              >
+                New here?{" "}
+                <a
+                  href={WEBSITE_URL}
+                  className="text-foreground transition-colors duration-200 ease-out hover:text-primary"
+                >
+                  Explore VEMS!
+                </a>
+              </p>
             </div>
+          </div>
         </main>
-        <footer className="w-full py-4 flex justify-center items-center gap-6 text-sm animate-in fade-in-0 duration-500 ease-out delay-[640ms] fill-mode-both">
+        <footer
+          className="w-full py-4 flex justify-center items-center gap-6 text-sm animate-in fade-in-0 duration-500 ease-out fill-mode-both"
+          style={{ animationDelay: "640ms" }}
+        >
           <span className="text-muted-foreground/50">
             © 2026 VEMS. All rights reserved.
           </span>
