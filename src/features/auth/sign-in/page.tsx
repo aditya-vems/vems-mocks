@@ -5,7 +5,9 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/features/auth/auth-layout";
 
-const WEBSITE_URL = "http://localhost:5173/";
+const WEBSITE_URL = import.meta.env.PROD
+  ? "https://vems-website.vercel.app"
+  : "http://localhost:5173/";
 
 function GoogleMark({ className }: { className?: string }) {
   return (
