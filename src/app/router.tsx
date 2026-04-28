@@ -3,16 +3,17 @@ import { Shell } from "./shell";
 import { simulateRoute } from "@/features/simulate/route";
 import { runRoute } from "@/features/run/route";
 import { analyzeRoute } from "@/features/analyze/route";
+import { signInRoute } from "@/features/auth/sign-in/route";
+import { homeRoute } from "@/features/home/route";
 
 export const routes = [simulateRoute, runRoute, analyzeRoute] as const;
 
 export const router = createBrowserRouter([
+  { path: "/", element: <Navigate to="/sign-in" replace /> },
+  { path: signInRoute.path, element: signInRoute.element },
+  { path: homeRoute.path, element: homeRoute.element },
   {
-    path: "/",
     element: <Shell />,
-    children: [
-      { index: true, element: <Navigate to="/simulate" replace /> },
-      ...routes.map((r) => ({ path: r.path, element: r.element })),
-    ],
+    children: routes.map((r) => ({ path: r.path, element: r.element })),
   },
 ]);
