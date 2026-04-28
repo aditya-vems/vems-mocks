@@ -8,13 +8,16 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "sync": "npm run build --prefix ../element-ui && npm install @v-ems/element"
+    "sync": "npm run build --prefix ../design-system && npm install @v-ems/element"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
-    "@v-ems/element": "^0.0.8",
+    "@iconify-icons/logos": "^1.2.36",
+    "@iconify-icons/simple-icons": "^1.2.74",
+    "@iconify/react": "^6.0.2",
+    "@v-ems/element": "^0.0.11",
     "highlight.js": "^11.11.1",
     "next-themes": "^0.4.6",
     "react": "^19.2.4",

@@ -1,9 +1,9 @@
-import { Button, FieldGroup, FloatingField, Separator } from "@v-ems/element";
-import { LogoLine } from "@v-ems/element/brand";
+import { Button, FieldGroup, FloatingField, Separator, Spinner } from "@v-ems/element";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LockIcon } from "@hugeicons/core-free-icons";
-import { useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthLayout } from "@/features/auth/auth-layout";
 
 const WEBSITE_URL = "http://localhost:5173/";
 
@@ -11,9 +11,7 @@ function GoogleMark({ className }: { className?: string }) {
   return (
     <svg
       aria-hidden
-      className={className}
-      width={22}
-      height={22}
+      className={`size-5 ${className ?? ""}`}
       viewBox="0 0 48 48"
     >
       <path
@@ -40,125 +38,118 @@ export function SignInPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleEmailSignIn() {
+  function handleEmailSignIn(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (isSubmitting) return;
     if (!email.trim()) {
       setEmailError("Email is required");
       return;
     }
-    navigate("/home");
+    setIsSubmitting(true);
+    setTimeout(() => {
+      navigate("/verify-email", { state: { email } });
+    }, 1500);
   }
 
   return (
-    <div className="dark relative h-screen overflow-hidden bg-background text-foreground">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(to bottom, color-mix(in oklch, var(--primary) 18%, transparent) 0%, color-mix(in oklch, var(--primary) 6%, transparent) 25%, transparent 60%)",
-        }}
-      />
-      <div className="relative flex h-full flex-col">
-        <header className="w-full pt-10 pb-4 flex justify-center items-center animate-in fade-in-0 duration-500 ease-out fill-mode-both">
-          <LogoLine className="[&>path]:text-primary" />
-        </header>
-        <main className="relative w-full flex-1 overflow-y-auto">
-          <div className="min-h-full flex flex-col justify-center items-center py-8">
-            <div className="flex flex-col gap-8 max-w-[520px] w-full px-6 sm:px-0">
-              <FieldGroup className="gap-4">
-                <FloatingField
-                  id="email"
-                  type="email"
-                  label="Email"
-                  value={email}
-                  error={emailError}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    setEmail(e.target.value);
-                    if (emailError) setEmailError(null);
-                  }}
-                  className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
-                  style={{ animationDelay: "80ms" }}
-                />
-                <Button
-                  type="button"
-                  className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
-                  style={{ animationDelay: "160ms" }}
-                  onClick={handleEmailSignIn}
-                >
-                  Sign In with Email
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full h-11 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
-                  style={{ animationDelay: "240ms" }}
-                  onClick={() => navigate("/home")}
-                >
-                  Sign In with Passkey
-                </Button>
-              </FieldGroup>
-              <div
-                className="flex w-full items-center gap-4 animate-in fade-in-0 duration-500 ease-out fill-mode-both"
-                style={{ animationDelay: "320ms" }}
-              >
-                <Separator className="flex-1" />
-                <span className="text-xs tracking-widest text-muted-foreground">
-                  OR
-                </span>
-                <Separator className="flex-1" />
-              </div>
-              <FieldGroup className="gap-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
-                  style={{ animationDelay: "400ms" }}
-                  onClick={() => navigate("/home")}
-                >
-                  Continue with Google
-                  <GoogleMark className="absolute right-4 top-1/2 -translate-y-1/2" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
-                  style={{ animationDelay: "480ms" }}
-                  onClick={() => navigate("/home")}
-                >
-                  Continue with SAML
-                  <HugeiconsIcon
-                    icon={LockIcon}
-                    size={22}
-                    strokeWidth={1.75}
-                    className="absolute right-4 top-1/2 -translate-y-1/2"
-                  />
-                </Button>
-              </FieldGroup>
-              <p
-                className="text-center text-muted-foreground/50 animate-in fade-in-0 duration-500 ease-out fill-mode-both"
-                style={{ animationDelay: "560ms" }}
-              >
-                New here?{" "}
-                <a
-                  href={WEBSITE_URL}
-                  className="text-foreground transition-colors duration-200 ease-out hover:text-primary"
-                >
-                  Explore VEMS!
-                </a>
-              </p>
-            </div>
-          </div>
-        </main>
-        <footer
-          className="w-full py-4 flex justify-center items-center gap-6 text-sm animate-in fade-in-0 duration-500 ease-out fill-mode-both"
-          style={{ animationDelay: "640ms" }}
+    <AuthLayout>
+      <form
+        onSubmit={handleEmailSignIn}
+        className="flex flex-col gap-8 max-w-[520px] w-full px-6 sm:px-0"
+      >
+        <FieldGroup className="gap-4">
+          <FloatingField
+            id="email"
+            type="email"
+            label="Email"
+            value={email}
+            error={emailError}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(null);
+            }}
+            className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+            style={{ animationDelay: "80ms" }}
+          />
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="relative w-full h-11 bg-foreground text-background hover:bg-foreground/90 disabled:opacity-100 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+            style={{ animationDelay: "160ms" }}
+          >
+            <span
+              className={`transition-all duration-200 ease-out ${isSubmitting ? "opacity-0 scale-90" : "opacity-100 scale-100"}`}
+            >
+              Sign In with Email
+            </span>
+            <span
+              aria-hidden
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-200 ease-out ${isSubmitting ? "opacity-100 scale-100" : "opacity-0 scale-50 pointer-events-none"}`}
+            >
+              <Spinner className="size-5" />
+            </span>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full h-11 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+            style={{ animationDelay: "240ms" }}
+            onClick={() => navigate("/home")}
+          >
+            Sign In with Passkey
+          </Button>
+        </FieldGroup>
+        <div
+          className="flex w-full items-center gap-4 animate-in fade-in-0 duration-500 ease-out fill-mode-both"
+          style={{ animationDelay: "320ms" }}
         >
-          <span className="text-muted-foreground/50">
-            © 2026 VEMS. All rights reserved.
+          <Separator className="flex-1" />
+          <span className="text-xs tracking-widest text-muted-foreground">
+            OR
           </span>
-        </footer>
-      </div>
-    </div>
+          <Separator className="flex-1" />
+        </div>
+        <FieldGroup className="gap-4">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+            style={{ animationDelay: "400ms" }}
+            onClick={() => navigate("/home")}
+          >
+            Continue with Google
+            <GoogleMark className="absolute right-4 top-1/2 -translate-y-1/2" />
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full h-11 relative animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both"
+            style={{ animationDelay: "480ms" }}
+            onClick={() => navigate("/home")}
+          >
+            Continue with SAML
+            <HugeiconsIcon
+              icon={LockIcon}
+              strokeWidth={1.75}
+              className="size-5 absolute right-4 top-1/2 -translate-y-1/2"
+            />
+          </Button>
+        </FieldGroup>
+        <p
+          className="text-center text-muted-foreground/50 animate-in fade-in-0 duration-500 ease-out fill-mode-both"
+          style={{ animationDelay: "560ms" }}
+        >
+          New here?{" "}
+          <a
+            href={WEBSITE_URL}
+            className="text-foreground transition-colors duration-200 ease-out hover:text-primary"
+          >
+            Explore VEMS!
+          </a>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }
