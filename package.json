@@ -19,6 +19,7 @@
     "@hugeicons/react": "^1.1.6",
     "@iconify-icons/logos": "^1.2.36",
     "@iconify-icons/simple-icons": "^1.2.74",
+    "@iconify-icons/vscode-icons": "^1.2.29",
     "@iconify/react": "^6.0.2",
     "@tiptap/extension-placeholder": "^3.22.5",
     "@tiptap/pm": "^3.22.5",
