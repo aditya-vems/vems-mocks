@@ -15,7 +15,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete01Icon, DragDropVerticalIcon } from "@hugeicons/core-free-icons";
+import {
+  Comment01Icon,
+  Delete01Icon,
+  DragDropVerticalIcon,
+} from "@hugeicons/core-free-icons";
 import { ChartBlock, type SeriesPoint } from "./blocks/chart-block";
 import { ScenarioTable } from "./blocks/scenario-table";
 import { Callout } from "./blocks/callout";
@@ -128,11 +132,13 @@ function BlockContent({
 function SortableBlock({
   block,
   editable,
+  onAddComment,
   onDelete,
   onUpdate,
 }: {
   block: Block;
   editable: boolean;
+  onAddComment?: (block: Block) => void;
   onDelete: (id: string) => void;
   onUpdate?: () => void;
 }) {
@@ -173,6 +179,20 @@ function SortableBlock({
               className="size-4"
             />
           </button>
+          {onAddComment ? (
+            <button
+              type="button"
+              aria-label="Add comment"
+              onClick={() => onAddComment(block)}
+              className="absolute -right-9 bottom-1.5 flex size-7 items-center justify-center rounded-md text-muted-foreground/70 opacity-0 transition-all hover:bg-accent hover:text-foreground group-hover/block:opacity-100 focus-visible:opacity-100 focus-visible:outline-none"
+            >
+              <HugeiconsIcon
+                icon={Comment01Icon}
+                strokeWidth={2}
+                className="size-4"
+              />
+            </button>
+          ) : null}
           <button
             type="button"
             aria-label="Delete block"
@@ -197,6 +217,7 @@ function SortableBlock({
 type BlocksCanvasProps = {
   blocks: Block[];
   editable: boolean;
+  onAddComment?: (block: Block) => void;
   onChange: (blocks: Block[]) => void;
   onUpdate?: () => void;
 };
@@ -204,6 +225,7 @@ type BlocksCanvasProps = {
 export function BlocksCanvas({
   blocks,
   editable,
+  onAddComment,
   onChange,
   onUpdate,
 }: BlocksCanvasProps) {
@@ -248,6 +270,7 @@ export function BlocksCanvas({
               key={block.id}
               block={block}
               editable={editable && activeId !== block.id}
+              onAddComment={onAddComment}
               onDelete={handleDelete}
               onUpdate={onUpdate}
             />

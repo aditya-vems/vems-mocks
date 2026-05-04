@@ -1,15 +1,10 @@
-import {
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MouseEvent,
-} from "react";
+import { useMemo, useRef, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
+  Button,
   Card,
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -112,29 +107,28 @@ function SimulationCard({
 }: {
   simulation: Simulation;
   onOpenSimulation: (sim: Simulation, rect: DOMRect) => void;
-  onOpenReport: (sim: Simulation, report: Report) => void;
+  onOpenReport: (sim: Simulation, report: Report, rect: DOMRect) => void;
 }) {
   const visibleReports = simulation.reports.slice(0, REPORTS_VISIBLE);
   const remaining = simulation.reports.length - visibleReports.length;
+  const rootRef = useRef<HTMLDivElement>(null);
 
-  function handleClick(e: MouseEvent<HTMLDivElement>) {
-    onOpenSimulation(simulation, e.currentTarget.getBoundingClientRect());
+  function openFromStatus(e: MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    onOpenSimulation(simulation, rect);
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.target !== e.currentTarget) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onOpenSimulation(simulation, e.currentTarget.getBoundingClientRect());
-    }
+  function openFromReport(report: Report) {
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    onOpenReport(simulation, report, rect);
   }
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
+      ref={rootRef}
       className="group relative flex h-full flex-col gap-3 overflow-hidden rounded-lg border border-border/60 bg-background/40 p-4 outline-none transition-colors hover:border-border hover:bg-background/70 focus-visible:border-border focus-visible:bg-background/70"
     >
       <div className="flex h-6 items-center justify-between gap-3">
@@ -147,21 +141,26 @@ function SimulationCard({
             {simulation.name}
           </span>
         </div>
-        <span className="flex h-full shrink-0 items-center text-xs leading-none text-muted-foreground transition-colors group-hover:text-foreground">
-          <span className="block transition-transform duration-200 ease-out group-hover:-translate-x-1">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={openFromStatus}
+          className="group/status h-6 px-3 -mr-3 text-xs text-muted-foreground hover:text-foreground focus-visible:text-foreground"
+        >
+          <span className="block transition-transform duration-200 ease-out group-hover/status:-translate-x-1">
             {statusLabel[simulation.status]}
           </span>
           <span
             aria-hidden
-            className="inline-flex h-full w-0 items-center overflow-hidden opacity-0 transition-[width,opacity] duration-200 ease-out group-hover:w-4 group-hover:opacity-100"
+            className="inline-flex h-full w-0 items-center overflow-hidden opacity-0 transition-[width,opacity] duration-200 ease-out group-hover/status:w-3 group-hover/status:opacity-100"
           >
             <HugeiconsIcon
               icon={ArrowRight01Icon}
               strokeWidth={2}
-              className="ml-0.5 size-3.5 shrink-0"
+              className="size-3.5 shrink-0"
             />
           </span>
-        </span>
+        </Button>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -188,7 +187,7 @@ function SimulationCard({
             <ReportRow
               key={r.id}
               report={r}
-              onOpen={(report) => onOpenReport(simulation, report)}
+              onOpen={openFromReport}
             />
           ))}
           {remaining > 0 ? (
@@ -303,17 +302,26 @@ export function HomePage() {
       navigate("/simulate");
       return;
     }
-    startMorph(rect, target, () => {
+    startMorph(rect, target, undefined, () => {
       setSelectedId(sim.id);
       setActiveReportId(null);
       navigate("/simulate");
     });
   }
 
-  function openReport(sim: Simulation, report: Report) {
-    setSelectedId(sim.id);
-    setActiveReportId(report.id);
-    navigate("/analyze");
+  function openReport(sim: Simulation, report: Report, rect: DOMRect) {
+    const target = cardRootRef.current?.getBoundingClientRect();
+    if (!target) {
+      setSelectedId(sim.id);
+      setActiveReportId(report.id);
+      navigate("/analyze");
+      return;
+    }
+    startMorph(rect, target, undefined, () => {
+      setSelectedId(sim.id);
+      setActiveReportId(report.id);
+      navigate("/analyze");
+    });
   }
 
   return (

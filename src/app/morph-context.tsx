@@ -13,6 +13,7 @@ type MorphPhase = "expanding" | "arrived" | "fading";
 type MorphState = {
   source: DOMRect;
   target: DOMRect;
+  arrived: boolean;
   expanded: boolean;
   phase: MorphPhase;
 };
@@ -21,64 +22,82 @@ type MorphContextValue = {
   startMorph: (
     source: DOMRect,
     target: DOMRect,
-    onArrival: () => void,
+    onArrival?: () => void,
+    onStart?: () => void,
   ) => void;
+  isMorphing: boolean;
 };
 
 const MorphContext = createContext<MorphContextValue | null>(null);
 
-const EXPAND_MS = 500;
-const FADE_MS = 320;
+const EXPAND_MS = 650;
+const FADE_MS = 420;
 
 export function MorphProvider({ children }: { children: ReactNode }) {
   const [morph, setMorph] = useState<MorphState | null>(null);
   const timersRef = useRef<number[]>([]);
+  const arrivalRef = useRef<(() => void) | null>(null);
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
     timersRef.current = [];
   }, []);
 
-  const startMorph = useCallback(
-    (source: DOMRect, target: DOMRect, onArrival: () => void) => {
-      clearTimers();
-      setMorph({ source, target, expanded: false, phase: "expanding" });
+  const arrive = useCallback(() => {
+    const fn = arrivalRef.current;
+    arrivalRef.current = null;
+    fn?.();
+    setMorph((prev) =>
+      prev ? { ...prev, arrived: true, phase: "fading" } : prev,
+    );
+    timersRef.current.push(
+      window.setTimeout(() => {
+        setMorph(null);
+      }, FADE_MS),
+    );
+  }, []);
 
-      // Two RAFs so the initial state paints before transitioning.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setMorph((prev) =>
-            prev ? { ...prev, expanded: true } : prev,
-          );
-        });
+  const startMorph = useCallback(
+    (
+      source: DOMRect,
+      target: DOMRect,
+      onArrival?: () => void,
+      onStart?: () => void,
+    ) => {
+      clearTimers();
+      arrivalRef.current = onArrival ?? null;
+      setMorph({
+        phase: "expanding",
+        source,
+        target,
+        arrived: false,
+        expanded: false,
       });
 
-      timersRef.current.push(
-        window.setTimeout(() => {
-          onArrival();
-          setMorph((prev) =>
-            prev ? { ...prev, phase: "fading" } : prev,
-          );
-        }, EXPAND_MS),
-      );
-
-      timersRef.current.push(
-        window.setTimeout(() => {
-          setMorph(null);
-        }, EXPAND_MS + FADE_MS),
-      );
+      // One RAF so initial state paints before transitioning.
+      requestAnimationFrame(() => {
+        setMorph((prev) => (prev ? { ...prev, expanded: true } : prev));
+        requestAnimationFrame(() => {
+          onStart?.();
+        });
+      });
     },
     [clearTimers],
   );
 
   return (
-    <MorphContext.Provider value={{ startMorph }}>
+    <MorphContext.Provider value={{ startMorph, isMorphing: morph !== null }}>
       {children}
       {morph
         ? createPortal(
             <div className="pointer-events-none fixed inset-0 z-50">
               <div
                 className="absolute rounded-lg bg-card ring-1 ring-foreground/10 shadow-xl"
+                onTransitionEnd={(e) => {
+                  if (morph.arrived) return;
+                  if (e.propertyName !== "height") return;
+                  arrive();
+                }}
                 style={{
                   top: morph.expanded
                     ? morph.target.top

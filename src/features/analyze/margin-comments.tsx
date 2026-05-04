@@ -1,11 +1,11 @@
-import { Avatar, AvatarFallback, AvatarImage, initials } from "@v-ems/element";
+import { Avatar, AvatarFallback, AvatarImage, Button, initials } from "@v-ems/element";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Comment01Icon,
   CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
 
-type MarginComment = {
+export type MarginComment = {
   id: string;
   user: string;
   time: string;
@@ -14,7 +14,7 @@ type MarginComment = {
   reference: string;
 };
 
-const comments: MarginComment[] = [
+export const demoMarginComments: MarginComment[] = [
   {
     id: "c1",
     user: "Mira Reyes",
@@ -39,7 +39,13 @@ const comments: MarginComment[] = [
   },
 ];
 
-function CommentCard({ comment }: { comment: MarginComment }) {
+function CommentCard({
+  comment,
+  onResolve,
+}: {
+  comment: MarginComment;
+  onResolve?: (id: string) => void;
+}) {
   return (
     <article className="rounded-lg border border-border/60 bg-card/80 p-3 backdrop-blur-sm transition-colors hover:border-border">
       <header className="flex items-center gap-2">
@@ -67,23 +73,42 @@ function CommentCard({ comment }: { comment: MarginComment }) {
         />
       </header>
       <p
-        className={`mt-2 text-xs leading-relaxed ${comment.resolved ? "text-muted-foreground line-through decoration-muted-foreground/40" : "text-foreground"}`}
+        className={`mt-2 text-sm leading-relaxed ${comment.resolved ? "text-muted-foreground line-through decoration-muted-foreground/40" : "text-foreground"}`}
       >
         {comment.text}
       </p>
-      <span className="mt-2 block text-[10px] uppercase tracking-wider text-muted-foreground/60">
-        on {comment.reference}
-      </span>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span className="block text-[10px] uppercase tracking-wider text-muted-foreground/60">
+          on {comment.reference}
+        </span>
+        {onResolve ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => onResolve(comment.id)}
+            className="h-7 px-2 text-sm"
+          >
+            {comment.resolved ? "Reopen" : "Resolve"}
+          </Button>
+        ) : null}
+      </div>
     </article>
   );
 }
 
-export function MarginComments() {
+export function MarginComments({
+  comments = demoMarginComments,
+  onResolve,
+}: {
+  comments?: MarginComment[];
+  onResolve?: (id: string) => void;
+}) {
   const totalComments = comments.length;
   const openCount = comments.filter((c) => !c.resolved).length;
 
   return (
-    <aside className="hidden w-56 shrink-0 flex-col gap-3 lg:flex">
+    <aside className="flex w-72 shrink-0 flex-col gap-3">
       <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-muted-foreground">
         <span>Comments</span>
         <span className="tabular-nums text-muted-foreground/70">
@@ -92,7 +117,7 @@ export function MarginComments() {
       </div>
       <div className="flex flex-col gap-3">
         {comments.map((c) => (
-          <CommentCard key={c.id} comment={c} />
+          <CommentCard key={c.id} comment={c} onResolve={onResolve} />
         ))}
       </div>
     </aside>

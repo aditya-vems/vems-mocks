@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogoLine } from "@v-ems/element/brand";
 import {
   Avatar,
@@ -32,6 +32,7 @@ import {
   BookmarkAdd02Icon,
   BulbIcon,
   CheckmarkCircle02Icon,
+  Comment01Icon,
   CodeIcon,
   DownloadSquare01Icon,
   FileAddIcon,
@@ -50,11 +51,16 @@ import {
   UnavailableIcon,
 } from "@hugeicons/core-free-icons";
 import { useSimulations } from "@/app/simulation-context";
+import { useMorph } from "@/app/morph-context";
 import {
   BlocksCanvas,
   type Block,
 } from "./blocks-canvas";
-import { MarginComments } from "./margin-comments";
+import {
+  demoMarginComments,
+  type MarginComment,
+  MarginComments,
+} from "./margin-comments";
 import { ActivitySidebar, TocSidebar } from "./toc-sidebar";
 import "./prose-report.css";
 
@@ -481,7 +487,7 @@ function ActionButton({
       onClick={onClick}
       className="flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-normal text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground"
     >
-      <HugeiconsIcon icon={icon} strokeWidth={2} className="size-3.5" />
+      <HugeiconsIcon icon={icon} strokeWidth={2} className="size-[18px]" />
       {children}
     </button>
   );
@@ -498,13 +504,13 @@ function InsertMenu({ onInsert }: { onInsert: (id: string) => void }) {
           <HugeiconsIcon
             icon={PlusSignIcon}
             strokeWidth={2.25}
-            className="size-3.5"
+            className="size-[18px]"
           />
           Insert
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             strokeWidth={2.25}
-            className="size-3 text-muted-foreground/70"
+            className="size-[14px] text-muted-foreground/70"
           />
         </button>
       </DropdownMenuTrigger>
@@ -552,13 +558,13 @@ function ModeMenu({
           <HugeiconsIcon
             icon={mode === "editing" ? QuillWrite01Icon : UnavailableIcon}
             strokeWidth={2}
-            className="size-3.5"
+            className="size-[18px]"
           />
           {mode === "editing" ? "Editing" : "Read only"}
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             strokeWidth={2.25}
-            className="size-3 text-muted-foreground/70"
+            className="size-[14px] text-muted-foreground/70"
           />
         </button>
       </DropdownMenuTrigger>
@@ -590,14 +596,34 @@ function ModeMenu({
 }
 
 export function AnalyzePage() {
-  const { simulations, selectedId } = useSimulations();
+  const { isMorphing } = useMorph();
+  const {
+    simulations,
+    selectedId,
+    activeReportId,
+    setActiveReportId,
+  } = useSimulations();
   const sim = simulations.find((s) => s.id === selectedId);
   const generatedDate = "Apr 28, 2026";
   const owner = sim?.owner ?? "Aditya Sharma";
-  const reportTitle = "Daily Generation Curve";
+  const [comments, setComments] =
+    useState<MarginComment[]>(demoMarginComments);
+  const hasComments = comments.length > 0;
+  const reports = sim?.reports ?? [];
+  const resolvedActiveReportId = useMemo(() => {
+    const fallback = reports[0]?.id ?? null;
+    if (!activeReportId) return fallback;
+    return reports.some((r) => r.id === activeReportId) ? activeReportId : fallback;
+  }, [activeReportId, reports]);
+  const activeReportName = useMemo(() => {
+    const fromId = reports.find((r) => r.id === resolvedActiveReportId)?.name;
+    return fromId ?? reports[0]?.name ?? "Report";
+  }, [reports, resolvedActiveReportId]);
+
   const [mode, setMode] = useState<ReportMode>("editing");
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const editable = mode === "editing";
+  const [showComments, setShowComments] = useState<boolean>(true);
 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const debounceRef = useRef<number | null>(null);
@@ -621,6 +647,53 @@ export function AnalyzePage() {
       if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!reports.length) return;
+    if (activeReportId && reports.some((r) => r.id === activeReportId)) return;
+    setActiveReportId(reports[0]?.id ?? null);
+  }, [activeReportId, reports, setActiveReportId]);
+
+  useEffect(() => {
+    setShowComments(hasComments);
+  }, [hasComments, selectedId]);
+
+  function blockReference(block: Block) {
+    switch (block.type) {
+      case "chart":
+        return block.title ?? "Chart";
+      case "scenario":
+        return block.title ?? "Scenario table";
+      case "metric":
+        return "Metrics";
+      case "callout":
+        return "Callout";
+      case "divider":
+        return "Divider";
+      case "prose":
+        return "Text";
+    }
+  }
+
+  function addCommentForBlock(block: Block) {
+    const text = window.prompt("Comment");
+    if (!text) return;
+    const comment: MarginComment = {
+      id: `c-${Date.now()}`,
+      user: "You",
+      time: "Just now",
+      text,
+      reference: blockReference(block),
+    };
+    setComments((prev) => [comment, ...prev]);
+    setShowComments(true);
+  }
+
+  function toggleResolveComment(id: string) {
+    setComments((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, resolved: !c.resolved } : c)),
+    );
+  }
 
   function handleInsert(id: string) {
     const newBlock = blockFromInsertId(id);
@@ -661,9 +734,35 @@ export function AnalyzePage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="font-medium text-foreground">
-                  {reportTitle}
-                </BreadcrumbPage>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="group flex items-center gap-1.5 rounded-md px-2 py-1 -mx-2 font-medium text-foreground outline-none transition-colors hover:bg-accent"
+                    >
+                      <BreadcrumbPage className="font-medium text-foreground">
+                        {activeReportName}
+                      </BreadcrumbPage>
+                      <HugeiconsIcon
+                        icon={ArrowDown01Icon}
+                        strokeWidth={2.25}
+                        className="size-3 text-muted-foreground transition-colors group-hover:text-foreground"
+                      />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" sideOffset={8} className="w-72">
+                    <DropdownMenuRadioGroup
+                      value={resolvedActiveReportId ?? ""}
+                      onValueChange={(v: string) => setActiveReportId(v)}
+                    >
+                      {reports.map((r) => (
+                        <DropdownMenuRadioItem key={r.id} value={r.id}>
+                          {r.name}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -674,6 +773,20 @@ export function AnalyzePage() {
         <div className="flex items-center gap-1">
           <InsertMenu onInsert={handleInsert} />
           <ModeMenu mode={mode} onChange={setMode} />
+          <button
+            type="button"
+            aria-label="Toggle comments"
+            onClick={() => setShowComments((v) => !v)}
+            className={`flex size-8 items-center justify-center rounded-md transition-colors outline-none hover:bg-accent ${
+              showComments ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <HugeiconsIcon
+              icon={Comment01Icon}
+              strokeWidth={2.25}
+              className="size-[18px]"
+            />
+          </button>
           <span aria-hidden className="mx-1 h-4 w-px bg-border" />
           <ActionButton icon={Share02Icon}>Share</ActionButton>
           <ActionButton icon={DownloadSquare01Icon}>Export</ActionButton>
@@ -690,8 +803,13 @@ export function AnalyzePage() {
         <TocSidebar sections={tocSections} />
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto flex w-full max-w-[1120px] gap-8 px-6 py-10">
-            <article className="flex flex-1 max-w-[820px] flex-col rounded-2xl bg-card ring-1 ring-foreground/10 shadow-2xl px-12 py-10">
+          <div className="mx-auto w-full px-6 py-10">
+            <div className="relative mx-auto w-full max-w-[1120px]">
+              <article
+                className={`mx-auto flex w-full max-w-[820px] flex-col rounded-2xl bg-card ring-1 ring-foreground/10 shadow-2xl px-12 py-10 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:min-w-[760px] ${
+                  showComments ? "-translate-x-24" : "translate-x-0"
+                }`}
+              >
             {/* Report header */}
             <header className="flex items-center justify-between gap-4 border-b border-border/60 pb-6">
               <LogoLine
@@ -714,7 +832,7 @@ export function AnalyzePage() {
                 Report
               </span>
               <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                {reportTitle}
+                {activeReportName}
               </h1>
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
@@ -742,12 +860,21 @@ export function AnalyzePage() {
 
             {/* Blocks */}
             <div className="mt-8">
-              <BlocksCanvas
-                blocks={blocks}
-                editable={editable}
-                onChange={handleBlocksChange}
-                onUpdate={markDirty}
-              />
+              {isMorphing ? (
+                <div className="flex flex-col gap-3">
+                  <div className="h-20 rounded-lg bg-muted/30" />
+                  <div className="h-56 rounded-lg bg-muted/30" />
+                  <div className="h-40 rounded-lg bg-muted/30" />
+                </div>
+              ) : (
+                <BlocksCanvas
+                  blocks={blocks}
+                  editable={editable}
+                  onAddComment={addCommentForBlock}
+                  onChange={handleBlocksChange}
+                  onUpdate={markDirty}
+                />
+              )}
             </div>
 
             {/* End of report */}
@@ -768,11 +895,22 @@ export function AnalyzePage() {
               <span>Page 1 of 1</span>
             </footer>
             </article>
-            <MarginComments />
+            </div>
           </div>
         </div>
 
         <ActivitySidebar collaborators={collaborators} activity={activity} />
+      </div>
+      <div
+        className={`fixed right-6 top-1/2 z-40 -translate-y-1/2 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          showComments
+            ? "translate-x-0 opacity-100"
+            : "translate-x-6 opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="w-[288px] max-h-[calc(100vh-11rem)] overflow-y-auto">
+          <MarginComments comments={comments} onResolve={toggleResolveComment} />
+        </div>
       </div>
     </Card>
   );
